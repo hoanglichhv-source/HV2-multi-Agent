@@ -1,0 +1,15 @@
+services:
+  hv2-multi-agent:
+    build: .
+    container_name: hv2_multi_agent_24x7
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - SERVICE_MODE=both
+      - PORT=8501
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./credentials.json:/app/credentials.json:ro
+      - ./output:/app/output

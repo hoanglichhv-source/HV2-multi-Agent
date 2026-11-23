@@ -1,0 +1,74 @@
+# ==============================================================================
+# QUY TRÌNH NHIỆM VỤ (TASKS) - NHÀ MÁY HV2
+# Kết thúc bằng nhiệm vụ tổng hợp của CEO HV2 với human_input=True để chờ duyệt.
+# ==============================================================================
+
+analyze_orders_and_inventory_task:
+  description: >
+    1. Đọc toàn bộ dữ liệu hiện tại từ Google Sheets gồm:
+       - Tab HV2_Orders (đơn hàng cần sản xuất)
+       - Tab HV2_Inventory (tồn kho cuộn phôi hiện có)
+       - Tab HV2_Maintenance (tình trạng 11 máy: MC-01..03, LU-01..04, MX-01, MM-01..03)
+    2. Phân tích từng đơn hàng và đối chiếu với các cuộn phôi trong kho.
+    3. ÁP DỤNG RÀNG BUỘC CỨNG HV2:
+       - 3 máy cán nguội MC-01, MC-02, MC-03 chỉ nhận khổ cuộn tối đa 720mm.
+       - Với MỌI cuộn phôi có khổ > 720mm (ví dụ 1219mm): BẮT BUỘC đánh dấu phải
+         qua máy xẻ băng MX-01 (Bottleneck) để xẻ chia khổ (<= 720mm) TRƯỚC KHI
+         đưa vào máy cán. Tính cụ thể phương án chia khổ (số băng, khổ mỗi băng,
+         hao hụt biên).
+       - Với cuộn phôi có khổ <= 720mm (ví dụ 650mm): đánh dấu được phép cấp thẳng
+         vào MC-01..03 không cần xẻ thô, giúp giảm tải cho MX-01.
+    4. Xác nhận trạng thái sẵn sàng của 11 thiết bị và lịch PM (nếu có máy đang
+       bảo trì thì không được xếp lịch vào khung giờ đó).
+  expected_output: >
+    Báo cáo phân tích Đơn hàng - Phôi - Khả dụng Thiết bị (bằng tiếng Việt),
+    nêu rõ:
+    - Mã đơn hàng, yêu cầu kỹ thuật (mác thép, độ dày, khổ, bề mặt, khối lượng).
+    - Danh sách cuộn phôi được phân bổ, phân loại rõ cuộn nào > 720mm (BẮT BUỘC
+      xẻ thô qua MX-01) và cuộn nào <= 720mm (đi thẳng máy cán).
+    - Phương án chia khổ chi tiết trên MX-01 và danh sách máy khả dụng trong 11 máy.
+
+build_department_schedules_task:
+  description: >
+    Dựa trên kết quả phân tích Đơn hàng - Phôi - Thiết bị từ bước trước, phối hợp
+    các bộ phận Sản xuất (Tổ Xẻ MX-01, Tổ Cán MC-01..03, Tổ Ủ LU-01..04, Tổ Mài
+    MM-01..03, Tổ Cơ động), Kỹ thuật Bảo trì (Bảo trì Cơ-Điện, Trục cán & Dao xẻ)
+    và Chất lượng (IQC/IPQC, OQC) để xây dựng kế hoạch sản xuất chi tiết theo
+    từng công đoạn:
+    1. Lịch máy xẻ MX-01 (BOTTLENECK): Xếp lịch xẻ thô chia khổ (> 720mm -> <= 720mm)
+       ưu tiên trước để cấp phôi kịp cho máy cán; kiểm tra xem có xung đột với lịch
+       xẻ thành phẩm hoặc lịch thay dao xẻ hay không.
+    2. Lịch 3 máy cán MC-01, MC-02, MC-03: Chỉ xếp các băng/cuộn có khổ <= 720mm;
+       xác nhận tình trạng trục cán.
+    3. Lịch 4 lò ủ LU-01, LU-02, LU-03, LU-04: Xếp lịch ủ nối tiếp sau cán.
+    4. Lịch 3 máy mài MM-01, MM-02, MM-03: Xếp lịch mài bề mặt (nếu đơn hàng yêu cầu).
+    5. Kế hoạch luân chuyển nội bộ giữa 11 máy & đóng gói của Tổ Cơ động.
+    6. Kế hoạch chuẩn bị dao xẻ, trục cán, lịch PM của Kỹ thuật Bảo trì và các
+       điểm kiểm tra IQC/IPQC/OQC của phòng Chất lượng.
+  expected_output: >
+    Kế hoạch điều độ chi tiết theo từng công đoạn (MX-01 -> MC-01..03 -> LU-01..04
+    -> MM-01..03 -> Đóng gói), kèm bảng kiểm soát xung đột trên nút thắt cổ chai
+    MX-01, checklist bảo trì/trục cán/dao xẻ và checklist IQC/IPQC/OQC.
+
+ceo_review_and_approval_task:
+  description: >
+    Với vai trò CEO Nhà máy HV2, hãy rà soát toàn bộ kế hoạch từ 11 nhân sự số:
+    1. KIỂM TRA BẮT BUỘC:
+       - Xác minh 100% không có cuộn > 720mm nào bị xếp thẳng vào MC-01, MC-02, MC-03.
+       - Phát hiện và chỉ rõ mọi xung đột lịch (hoặc nguy cơ nghẽn tải) trên máy
+         xẻ băng MX-01 (Bottleneck) cùng phương án giải quyết cụ thể.
+       - Xác minh không xếp lịch đè lên lịch bảo trì PM trong HV2_Maintenance.
+    2. Sau khi tổng hợp kế hoạch điều độ hoàn chỉnh, ghi các dòng lịch sản xuất
+       dự kiến vào tab HV2_Production_Schedule và các hạng mục kiểm tra chất lượng
+       vào tab HV2_QC_Reports (trạng thái 'Pending Approval' / 'Chờ duyệt').
+    3. Trình bày Bản Kế hoạch Tổng thể Nhà máy HV2 rõ ràng, có bảng biểu dễ đọc
+       bằng tiếng Việt và DỪNG LẠI CHỜ NGƯỜI DÙNG PHÊ DUYỆT (human_input=True).
+       Nếu người dùng góp ý điều chỉnh, cập nhật lại kế hoạch theo chỉ đạo.
+  expected_output: >
+    Bản Kế hoạch Sản xuất Tổng thể Nhà máy HV2 hoàn chỉnh (bằng tiếng Việt) gồm:
+    1. Tóm tắt điều hành (Executive Summary) & Quyết định phân bổ phôi (rõ quy tắc 720mm).
+    2. Phân tích nút thắt cổ chai MX-01 & Phương án xử lý xung đột lịch.
+    3. Bảng lịch sản xuất chi tiết trên 11 thiết bị (đã đồng bộ lên tab HV2_Production_Schedule).
+    4. Kế hoạch Bảo trì PM, Trục cán/Dao xẻ & Luân chuyển đóng gói.
+    5. Kế hoạch kiểm soát chất lượng IQC/IPQC/OQC (đã đồng bộ lên tab HV2_QC_Reports).
+    6. Xác nhận trạng thái phê duyệt từ Ban Lãnh đạo.

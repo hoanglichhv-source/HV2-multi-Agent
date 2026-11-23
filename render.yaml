@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: hv2-multi-agent-control-center
+    runtime: docker
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: SERVICE_MODE
+        value: both
+      - key: CEO_MODEL
+        value: gemini/gemini-3.1-flash-lite
+      - key: WORKER_MODEL
+        value: gemini/gemini-3.1-flash-lite
+      - key: CREW_MAX_RPM
+        value: "15"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_SHEET_ID
+        sync: false
+      - key: GOOGLE_CREDENTIALS_JSON
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: TELEGRAM_ALLOWED_CHAT_ID
+        sync: false
