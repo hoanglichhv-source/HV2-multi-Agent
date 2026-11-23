@@ -1,0 +1,51 @@
+name: HV2 Multi-Agent Scheduled Planning (24/7)
+
+on:
+  schedule:
+    - cron: "0 0,6 * * *"
+  workflow_dispatch:
+    inputs:
+      directive:
+        description: "Chỉ thị giao việc riêng cho CEO Nhà máy HV2 (tùy chọn)"
+        required: false
+        default: ""
+
+jobs:
+  run-hv2-agents:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run 12 AI Agents HV2 & Send Plan to Telegram
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          CEO_MODEL: ${{ secrets.CEO_MODEL || 'gemini/gemini-3.1-flash-lite' }}
+          WORKER_MODEL: ${{ secrets.WORKER_MODEL || 'gemini/gemini-3.1-flash-lite' }}
+          CREW_MAX_RPM: "15"
+          HV2_SCHEDULED_DIRECTIVE: ${{ github.event.inputs.directive }}
+        run: python run_scheduled_telegram.py
+
+      - name: Upload generated HV2 plan report
+        uses: actions/upload-artifact@v4
+        with:
+          name: hv2-production-plan
+          path: output/*.md
+          if-no-files-found: ignore
